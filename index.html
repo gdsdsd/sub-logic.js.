@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <!-- 문서 인코딩과 모바일 화면 너비를 지정해 한글과 작은 화면을 올바르게 표시합니다. -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>구독 트래커</title>
+  <!-- 화면 모양은 CSS 파일, 실제 동작은 아래 JavaScript 파일에서 담당합니다. -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 페이지의 주요 내용을 감싸는 바깥 컨테이너입니다. -->
+  <main class="app-shell">
+    <!-- 상단 제목과 짧은 설명 -->
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">MY SUBSCRIPTIONS</p>
+        <h1>구독 트래커</h1>
+        <p class="header-copy">매달 나가는 구독료를 한눈에 관리해요.</p>
+      </div>
+      <span class="header-mark" aria-hidden="true">₩</span>
+    </header>
+
+    <!-- 자바스크립트가 각 id를 찾아 계산 결과를 표시합니다. -->
+    <section class="summary-grid" aria-label="구독 요약">
+      <article class="summary-card summary-primary">
+        <p class="summary-label">월 합계</p>
+        <p class="summary-value" id="monthly-total">₩0</p>
+        <p class="summary-hint">매달 기준 구독 지출</p>
+      </article>
+      <article class="summary-card">
+        <p class="summary-label">연간 합계</p>
+        <p class="summary-value" id="yearly-total">₩0</p>
+        <p class="summary-hint">월 합계 × 12개월</p>
+      </article>
+      <article class="summary-card">
+        <p class="summary-label">이번 주 결제 예정</p>
+        <p class="summary-value" id="upcoming-count">0건</p>
+        <p class="summary-hint">앞으로 7일 이내</p>
+      </article>
+    </section>
+
+    <!-- 데스크톱에서는 목록과 입력 영역을 나란히, 좁은 화면에서는 세로로 배치합니다. -->
+    <div class="content-grid">
+      <!-- 등록한 구독 카드가 subscription-list 안에 자바스크립트로 생성됩니다. -->
+      <section class="panel subscriptions-panel" aria-labelledby="subscriptions-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">YOUR LIST</p>
+            <h2 id="subscriptions-heading">내 구독</h2>
+          </div>
+          <span class="item-count" id="subscription-count">0개</span>
+        </div>
+        <div class="subscription-list" id="subscription-list"></div>
+      </section>
+
+      <!-- 오른쪽 보조 영역: 추가/수정 폼과 카테고리별 통계 -->
+      <aside class="side-column">
+        <section class="panel form-panel" aria-labelledby="form-heading">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">ADD OR UPDATE</p>
+              <h2 id="form-heading">새 구독 추가</h2>
+            </div>
+          </div>
+          <!-- required, min 등은 브라우저 기본 입력 검사에도 사용됩니다. -->
+          <form id="subscription-form">
+            <label for="subscription-name">구독 이름</label>
+            <input id="subscription-name" name="name" type="text" placeholder="예: 음악 스트리밍" maxlength="60" required>
+
+            <!-- 금액과 결제 주기를 한 행에 배치하는 영역 -->
+            <div class="form-row">
+              <div>
+                <label for="subscription-amount">금액</label>
+                <input id="subscription-amount" name="amount" type="number" min="1" step="1" placeholder="예: 10900" required>
+              </div>
+              <div>
+                <label for="subscription-cycle">결제 주기</label>
+                <select id="subscription-cycle" name="cycle" required>
+                  <option value="monthly">매월</option>
+                  <option value="yearly">매년</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 날짜 입력값은 YYYY-MM-DD 형식으로 전달됩니다. -->
+            <label for="subscription-date">다음 결제일</label>
+            <input id="subscription-date" name="nextPaymentDate" type="date" required>
+
+            <!-- 선택한 값은 저장 데이터의 category 속성으로 사용됩니다. -->
+            <label for="subscription-category">카테고리</label>
+            <select id="subscription-category" name="category" required>
+              <option value="영상">영상</option>
+              <option value="음악">음악</option>
+              <option value="운동">운동</option>
+              <option value="생산성">생산성</option>
+              <option value="기타">기타</option>
+            </select>
+
+            <div class="form-actions">
+              <!-- 수정 모드에서는 버튼 문구만 바뀌고 같은 폼 제출 처리를 사용합니다. -->
+              <button class="button button-primary" id="submit-button" type="submit">구독 추가</button>
+              <!-- 수정 중일 때만 보이며 기존 값을 바꾸지 않고 입력을 취소합니다. -->
+              <button class="button button-secondary" id="cancel-edit" type="button" hidden>취소</button>
+            </div>
+          </form>
+          <!-- 저장 위치를 사용자에게 알립니다. -->
+          <p class="storage-note">데이터는 이 브라우저에 저장됩니다.</p>
+        </section>
+
+        <!-- 카테고리별 월 금액과 전체 월 금액 대비 비율 -->
+        <section class="panel category-panel" aria-labelledby="category-heading">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">SPENDING MIX</p>
+              <h2 id="category-heading">카테고리별 비중</h2>
+            </div>
+          </div>
+          <div class="category-list" id="category-list"></div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- 저장 성공/실패 등의 안내를 보조 기술에도 알립니다. -->
+    <p class="notice" id="notice" role="status" aria-live="polite"></p>
+  </main>
+
+  <!-- logic.js 하단의 예제 console.log가 전역 testData를 읽으므로 실행 전에 빈 배열을 준비합니다. -->
+  <script>var testData = [];</script>
+  <!-- 계산 함수들을 먼저 불러와 다음 두 스크립트에서 사용할 수 있게 합니다. -->
+  <script src="js/logic.js"></script>
+  <!-- 화면에 요소를 그리는 코드 다음에 저장과 사용자 동작 코드를 실행합니다. -->
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
